@@ -2,3 +2,7 @@ Meeting on Nov 9:
 Recap of project goal
 TODO:
 Find ways of reading esp32 printf data from usb port to UART
+
+Meeting on Nov 12: 
+Fact check if stm32 do usb full speeed, make sure USB to UART chip can talk over USB full speed. 
+ESP32 talk to UART at 3.3V, so the chip has to be able to talk at 3.3V; USB always have to be 5V. The chip should have two different power supplies. 
