@@ -1,0 +1,8 @@
+To Build the Project:
+pio run
+Build and upload to ESP32-S3:
+pio run --target upload
+Open Serial Monitor:
+pio device monitor
+
+
