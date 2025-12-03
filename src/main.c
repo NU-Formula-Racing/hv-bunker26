@@ -10,6 +10,7 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_err.h"
 #include "driver/uart.h"
 #include "string.h"
 #include "driver/gpio.h"
@@ -38,9 +39,14 @@ void uart_init(void) {
         .source_clk = UART_SCLK_DEFAULT,
     };
     // We won't use a buffer for sending data.
-    uart_driver_install(RX_UART, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
+    esp_err_t ret = uart_driver_install(RX_UART, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(RX_TASK_TAG, "UART driver install failed: %s", esp_err_to_name(ret));
+        return;
+    }
     uart_param_config(RX_UART, &uart_config);
     uart_set_pin(RX_UART, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    ESP_LOGI(RX_TASK_TAG, "UART initialized: RX on GPIO %d, TX on GPIO %d, Baud: 115200", RXD_PIN, TXD_PIN);
 }
 
 /**
@@ -73,6 +79,6 @@ static void rx_task(void *arg){
 
 void app_main(void)
 {
-    xTaskCreate(rx_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES - 1, NULL);
+    xTaskCreate(rx_task, "uart_rx_task", 4096, NULL, configMAX_PRIORITIES - 1, NULL);
 }
 

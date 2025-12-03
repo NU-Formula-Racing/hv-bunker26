@@ -1,7 +1,9 @@
 To Build the Project:
 pio run
-Build and upload to ESP32-S3:
+Build and upload to ESP32:
 pio run --target upload
+Erase flash (if needed):
+pio run --target erase
 Open Serial Monitor:
 pio device monitor
 
