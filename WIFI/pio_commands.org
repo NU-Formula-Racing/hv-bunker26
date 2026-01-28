@@ -1,0 +1,28 @@
+To Build the Project:
+pio run
+Build and upload to ESP32:
+pio run --target upload
+Erase flash (if needed):
+pio run --target erase
+Open Serial Monitor:
+pio device monitor
+
+
+
+//////GetMAC
+#include <WiFi.h>
+
+void setup() {
+  Serial.begin(115200);
+  delay(500);
+
+  // This is the MAC used when the ESP32 connects to Wi-Fi (the one you should register)
+  Serial.print("STA MAC: ");
+  Serial.println(WiFi.macAddress());
+
+  // Optional: also show the SoftAP MAC (NOT usually the one you register)
+  Serial.print("AP  MAC: ");
+  Serial.println(WiFi.softAPmacAddress());
+}
+
+void loop() {}
