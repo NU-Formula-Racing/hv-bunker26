@@ -42,22 +42,23 @@ void setup() {
 }
 
 void loop() {
-  // Periodically print status
-  static unsigned long last = 0;
-  if (millis() - last > 5000) {
-    last = millis();
+  setup();
+  // // Periodically print status
+  // static unsigned long last = 0;
+  // if (millis() - last > 5000) {
+  //   last = millis();
 
-    wl_status_t s = WiFi.status();
-    if (s == WL_CONNECTED) {
-      Serial.print("[OK] IP=");
-      Serial.print(WiFi.localIP());
-      Serial.print(" RSSI=");
-      Serial.println(WiFi.RSSI());
-    } else {
-      Serial.print("[DROP] status=");
-      Serial.println((int)s);
-      // try reconnect
-      connectWiFi();
-    }
-  }
+  //   wl_status_t s = WiFi.status();
+  //   if (s == WL_CONNECTED) {
+  //     Serial.print("[OK] IP=");
+  //     Serial.print(WiFi.localIP());
+  //     Serial.print(" RSSI=");
+  //     Serial.println(WiFi.RSSI());
+  //   } else {
+  //     Serial.print("[DROP] status=");
+  //     Serial.println((int)s);
+  //     // try reconnect
+  //     connectWiFi();
+  //   }
+  // }
 }
