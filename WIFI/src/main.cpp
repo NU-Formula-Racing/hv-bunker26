@@ -46,8 +46,9 @@ bool postToGoogleSheets(const String& jsonPayload) {
 
   HTTPClient http;
 
-  // Equivalent to curl -L (follow redirects)
-  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+
+  //http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
 
   // Start request
   if (!http.begin(GOOGLE_SCRIPT_URL)) {
@@ -55,7 +56,7 @@ bool postToGoogleSheets(const String& jsonPayload) {
     return false;
   }
 
-  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Content-Type", "application/json");//Adding headers
   http.addHeader("User-Agent", "ESP32-S3-HV-Bunker/1.0");
   http.setTimeout(15000);
 
@@ -69,13 +70,19 @@ bool postToGoogleSheets(const String& jsonPayload) {
 
   Serial.print("POST code: ");
   Serial.println(code);
-  if (resp.length()) {
-    Serial.print("Response: ");
-    Serial.println(resp);
-  }
+  // if (resp.length()) {
+  //   Serial.print("Response: ");
+  //   Serial.println(resp);
+  // }
 
+  // Treating redicrecting as success
+  if (code == 302) {
+    Serial.println("Redirect from Apps Script (normal). Treating as success.");
+    return true;
+  }
+  
   // 2xx = success
-  return (code >= 200 && code < 300);
+  return (code >= 200 && code < 400);
 }
 
 String makePayload() {
@@ -113,23 +120,4 @@ void loop() {
     Serial.println(ok ? "YES" : "NO");
     counter++;
   }
-
-  // // Periodically print status
-  // static unsigned long last = 0;
-  // if (millis() - last > 5000) {
-  //   last = millis();
-
-  //   wl_status_t s = WiFi.status();
-  //   if (s == WL_CONNECTED) {
-  //     Serial.print("[OK] IP=");
-  //     Serial.print(WiFi.localIP());
-  //     Serial.print(" RSSI=");
-  //     Serial.println(WiFi.RSSI());
-  //   } else {
-  //     Serial.print("[DROP] status=");
-  //     Serial.println((int)s);
-  //     // try reconnect
-  //     connectWiFi();
-  //   }
-  // }
 }
