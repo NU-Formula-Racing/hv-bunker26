@@ -9,7 +9,6 @@ protected:
     usb_device_info_t dev_info;
     usb_device_handle_t dev_hdl;
     usb_host_client_event_cb_t _client_event_cb = nullptr;
-    uint8_t _dev_addr;
 
 public:
     USBhost();
@@ -24,7 +23,6 @@ public:
     usb_device_info_t getDeviceInfo();
     const usb_device_desc_t *getDeviceDescriptor();
     const usb_config_desc_t *getConfigurationDescriptor();
-    uint8_t getConfiguration();
 
     usb_host_client_handle_t clientHandle();
     usb_device_handle_t deviceHandle();

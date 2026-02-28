@@ -10,8 +10,6 @@ void IRAM_ATTR usb_ctrl_cb(usb_transfer_t *transfer)
     USBacmDevice *dev = (USBacmDevice *)transfer->context;
     if (transfer->data_buffer[0] == SET_VALUE && transfer->data_buffer[1] == SET_LINE_CODING) {
         dev->_callback(CDC_CTRL_SET_LINE_CODING, transfer);
-    } else if (transfer->data_buffer[0] == GET_VALUE && transfer->data_buffer[1] == GET_LINE_CODING) {
-        dev->_callback(CDC_CTRL_GET_LINE_CODING, transfer);
     } else if (transfer->data_buffer[0] == SET_VALUE && transfer->data_buffer[1] == SET_CONTROL_LINE_STATE) {
         dev->_callback(CDC_CTRL_SET_CONTROL_LINE_STATE, transfer);
     }
@@ -115,14 +113,6 @@ void USBacmDevice::setLineCoding(uint32_t bitrate, uint8_t cf, uint8_t parity, u
     xfer_ctrl->num_bytes = sizeof(usb_setup_packet_t) + 7;
     esp_err_t err = usb_host_transfer_submit_control(_host->clientHandle(), xfer_ctrl);
     if (err) ESP_LOGW(TAG, "setLineCoding: 0x%02x", err);
-}
-
-void USBacmDevice::getLineCoding()
-{
-    USB_CTRL_REQ_CDC_GET_LINE_CODING((usb_setup_packet_t *)xfer_ctrl->data_buffer, 0);
-    xfer_ctrl->num_bytes = sizeof(usb_setup_packet_t) + ((usb_setup_packet_t *)xfer_ctrl->data_buffer)->wLength;
-    esp_err_t err = usb_host_transfer_submit_control(_host->clientHandle(), xfer_ctrl);
-    if (err) ESP_LOGW(TAG, "getLineCoding: 0x%02x", err);
 }
 
 void USBacmDevice::INDATA(size_t len)

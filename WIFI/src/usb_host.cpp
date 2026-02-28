@@ -120,11 +120,6 @@ const usb_config_desc_t *USBhost::getConfigurationDescriptor()
     return config_desc;
 }
 
-uint8_t USBhost::getConfiguration()
-{
-    return getDeviceInfo().bConfigurationValue;
-}
-
 usb_host_client_handle_t USBhost::clientHandle()
 {
     return client_hdl;

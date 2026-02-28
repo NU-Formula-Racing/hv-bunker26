@@ -6,7 +6,6 @@
 #define CDC_DATA_OUT 2
 #define CDC_CTRL_SET_CONTROL_LINE_STATE 3
 #define CDC_CTRL_SET_LINE_CODING 4
-#define CDC_CTRL_GET_LINE_CODING 5
 
 class USBacmDevice : public USBhostDevice
 {
@@ -27,7 +26,6 @@ public:
     bool init();
     void setControlLine(bool dtr, bool rts);
     void setLineCoding(uint32_t bitrate, uint8_t cf, uint8_t parity, uint8_t bits);
-    void getLineCoding();
     void INDATA(size_t len = 64);
     void OUTDATA(uint8_t *, size_t);
     bool isConnected();

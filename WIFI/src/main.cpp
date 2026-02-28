@@ -60,7 +60,6 @@ static void client_event_callback(const usb_host_client_event_msg_t *event_msg, 
                         device->init();
                         device->onEvent(cdc_callback);
                         device->setControlLine(1, 1);
-                        device->INDATA();
                     }
                 }
             }
@@ -114,8 +113,4 @@ void loop()
         }
     }
 
-    if (device && device->isConnected()) {
-        device->OUTDATA((uint8_t *)"test\n", 5);
-        delay(1000);
-    }
 }
