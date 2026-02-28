@@ -1,7 +1,7 @@
 #include "esp_log.h"
 #include "string.h"
 #include "usb/usb_helpers.h"
-#include "usb_acm.hpp"
+#include "usb_acm.h"
 
 static const char *TAG = "USBacm";
 

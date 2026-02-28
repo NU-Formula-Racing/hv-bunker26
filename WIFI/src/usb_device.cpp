@@ -1,5 +1,5 @@
 #include "esp_log.h"
-#include "usb_device.hpp"
+#include "usb_device.h"
 
 USBhostDevice::USBhostDevice() {}
 

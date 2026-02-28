@@ -1,7 +1,7 @@
 #pragma once
 #include "esp_err.h"
 #include "usb/usb_host.h"
-#include "usb_host.hpp"
+#include "usb_host.h"
 
 typedef void (*usb_host_event_cb_t)(int, void *data, size_t len);
 

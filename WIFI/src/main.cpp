@@ -1,8 +1,8 @@
 #include <WiFi.h>
 #include "wifi_connect.h"
 #include "google_sheets.h"
-#include "usb_host.hpp"
-#include "usb_acm.hpp"
+#include "usb_host.h"
+#include "usb_acm.h"
 #include "usb/usb_helpers.h"
 #include "esp_log.h"
 #include "uart_serial.h"

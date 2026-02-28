@@ -1,6 +1,6 @@
 #pragma once
-#include "usb_device.hpp"
-#include "usb_requests.hpp"
+#include "usb_device.h"
+#include "usb_requests.h"
 
 #define CDC_DATA_IN 1
 #define CDC_DATA_OUT 2

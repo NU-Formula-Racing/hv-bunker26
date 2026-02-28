@@ -3,7 +3,7 @@
 #include "esp_log.h"
 #include "usb/usb_host.h"
 
-#include "usb_host.hpp"
+#include "usb_host.h"
 
 static const char *TAG = "USBhost";
 
