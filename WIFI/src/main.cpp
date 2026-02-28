@@ -29,7 +29,8 @@ static void cdc_callback(int event, void *data, size_t len)
     case CDC_DATA_OUT:
         break;
     case CDC_CTRL_SET_LINE_CODING:
-        Serial0.println("CDC: line coding set");
+        Serial0.println("CDC: line coding set — starting bulk reads");
+        if (device) device->INDATA();
         break;
     }
 }
