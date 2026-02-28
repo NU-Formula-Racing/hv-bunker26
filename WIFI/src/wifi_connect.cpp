@@ -1,4 +1,5 @@
 #include "wifi_connect.h"
+#include "uart_serial.h"
 #include <WiFi.h>
 
 const char* SSID = "Device-Northwestern";   // <- set this
@@ -9,7 +10,7 @@ void connectWiFi() {
   WiFi.setAutoReconnect(true);
   WiFi.persistent(true);
 
-  Serial.printf("Connecting to SSID: %s\n", SSID);
+  Serial0.printf("Connecting to SSID: %s\n", SSID);
 
   // If the network is open, PASS can be ""
   WiFi.begin(SSID, PASS);
@@ -17,17 +18,17 @@ void connectWiFi() {
   // Wait up to ~15 seconds
   unsigned long t0 = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - t0 < 15000) {
-    Serial.print(".");
+    Serial0.print(".");
     delay(500);
   }
-  Serial.println();
+  Serial0.println();
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("WiFi: CONNECTED");
-    Serial.print("IP: ");   Serial.println(WiFi.localIP());
-    Serial.print("RSSI: "); Serial.println(WiFi.RSSI());
+    Serial0.println("WiFi: CONNECTED");
+    Serial0.print("IP: ");   Serial0.println(WiFi.localIP());
+    Serial0.print("RSSI: "); Serial0.println(WiFi.RSSI());
   } else {
-    Serial.print("WiFi: NOT connected, status=");
-    Serial.println(WiFi.status());
+    Serial0.print("WiFi: NOT connected, status=");
+    Serial0.println(WiFi.status());
   }
 }

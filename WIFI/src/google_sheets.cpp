@@ -1,5 +1,6 @@
 #include "google_sheets.h"
 #include "wifi_connect.h"
+#include "uart_serial.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
 
@@ -8,11 +9,11 @@ const char* GOOGLE_SCRIPT_URL =
 
 bool postToGoogleSheets(const String& jsonPayload) {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected. Reconnecting...");
+    Serial0.println("WiFi not connected. Reconnecting...");
     connectWiFi();
   }
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Still offline, aborting POST.");
+    Serial0.println("Still offline, aborting POST.");
     return false;
   }
 
@@ -21,7 +22,7 @@ bool postToGoogleSheets(const String& jsonPayload) {
   http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
 
   if (!http.begin(GOOGLE_SCRIPT_URL)) {
-    Serial.println("http.begin() failed");
+    Serial0.println("http.begin() failed");
     return false;
   }
 
@@ -35,12 +36,12 @@ bool postToGoogleSheets(const String& jsonPayload) {
 
   http.end();
 
-  Serial.print("POST code: ");
-  Serial.println(code);
+  Serial0.print("POST code: ");
+  Serial0.println(code);
 
   // Treating redirect as success
   if (code == 302) {
-    Serial.println("Redirect from Apps Script (normal). Treating as success.");
+    Serial0.println("Redirect from Apps Script (normal). Treating as success.");
     return true;
   }
 

@@ -1,43 +1,37 @@
-#ifndef USB_ACM_HPP
-#define USB_ACM_HPP
+#pragma once
+#include "usb_device.hpp"
+#include "usb_requests.hpp"
 
-#include "usb/usb_host.h"
-#include "usb_host.hpp"
-#include <stddef.h>
-#include <stdint.h>
+#define CDC_DATA_IN 1
+#define CDC_DATA_OUT 2
+#define CDC_CTRL_SET_CONTROL_LINE_STATE 3
+#define CDC_CTRL_SET_LINE_CODING 4
+#define CDC_CTRL_GET_LINE_CODING 5
 
-/** CDC ACM event codes (match template callback). */
-#define CDC_CTRL_SET_CONTROL_LINE_STATE  1
-#define CDC_DATA_IN                      2
-#define CDC_DATA_OUT                     3
-#define CDC_CTRL_SET_LINE_CODING         4
-
-typedef void (*usb_acm_event_cb_t)(int event, void *data, size_t len);
-
-/**
- * Minimal CDC-ACM device wrapper.
- * Matches template interface; implement INDATA/OUTDATA via ESP-IDF CDC host driver if needed.
- */
-class USBacmDevice {
-public:
-  USBacmDevice(const usb_config_desc_t *config_desc, USBhost *host);
-  ~USBacmDevice();
-
-  bool init();
-  void deinit();
-  void onEvent(usb_acm_event_cb_t cb) { event_cb_ = cb; }
-  void setControlLine(uint8_t dtr, uint8_t rts);
-  void setLineCoding(uint32_t baud, uint8_t stop, uint8_t parity, uint8_t data_bits);
-  void INDATA();   /* start/continue reading from device */
-  void OUTDATA(const uint8_t *data, size_t len);
-  bool isConnected() const { return connected_; }
+class USBacmDevice : public USBhostDevice
+{
+    friend void IRAM_ATTR usb_ctrl_cb(usb_transfer_t *transfer);
+    friend void IRAM_ATTR usb_read_cb(usb_transfer_t *transfer);
+    friend void IRAM_ATTR usb_write_cb(usb_transfer_t *transfer);
 
 private:
-  const usb_config_desc_t *config_desc_;
-  USBhost *host_;
-  usb_acm_event_cb_t event_cb_ = nullptr;
-  bool connected_ = false;
-  bool inited_ = false;
-};
+    const usb_ep_desc_t *ep_int;
+    const usb_ep_desc_t *ep_in;
+    const usb_ep_desc_t *ep_out;
+    bool connected;
 
-#endif
+public:
+    USBacmDevice(const usb_config_desc_t *config_desc, USBhost *);
+    ~USBacmDevice();
+
+    bool init();
+    void setControlLine(bool dtr, bool rts);
+    void setLineCoding(uint32_t bitrate, uint8_t cf, uint8_t parity, uint8_t bits);
+    void getLineCoding();
+    void INDATA(size_t len = 64);
+    void OUTDATA(uint8_t *, size_t);
+    bool isConnected();
+
+private:
+    void _callback(int event, usb_transfer_t *data);
+};
