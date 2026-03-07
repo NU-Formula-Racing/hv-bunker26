@@ -1,4 +1,5 @@
 #include "google_sheets.h"
+#include "bms_data.h"
 #include "wifi_connect.h"
 #include "uart_serial.h"
 #include <WiFi.h>
@@ -31,36 +32,59 @@ bool postToGoogleSheets(const String& jsonPayload) {
   http.setTimeout(15000);
 
   int code = http.POST((uint8_t*)jsonPayload.c_str(), jsonPayload.length());
-
-  String resp = http.getString();
-
   http.end();
 
-  Serial0.print("POST code: ");
-  Serial0.println(code);
-
-  // Treating redirect as success
-  if (code == 302) {
-    Serial0.println("Redirect from Apps Script (normal). Treating as success.");
+  if (code == 302)
     return true;
-  }
 
   return (code >= 200 && code < 400);
 }
 
 String makePayload() {
-  // Minimal manual JSON (numbers must not be quoted; strings must be quoted)
-  String s = "{";
-  s += "\"device_id\":\"esp32-s3\",";
-  s += "\"soc_pct\":12.3,";
-  s += "\"v_max\":4.2,";
-  s += "\"v_min\":3.9,";
-  s += "\"v_avg\":4.05,";
-  s += "\"t_max\":40.1,";
-  s += "\"t_min\":25.2,";
-  s += "\"t_avg\":32.6,";
-  s += "\"cell_voltages_V\":[4.01,4.02],";
-  s += "\"cell_temps_C\":[30.1,31.2]";
-  s += "}";
-  return s;
+  bms_data_t avg;
+  bms_accum_snapshot(&avg);
+
+  static char buf[3000];
+  int pos = 0;
+
+  pos += snprintf(buf + pos, sizeof(buf) - pos,
+    "{\"device_id\":\"esp32-s3\","
+    "\"soc\":%.2f,"
+    "\"total_v\":%.2f,"
+    "\"v_max\":%.2f,"
+    "\"v_min\":%.2f,"
+    "\"v_avg\":%.2f,"
+    "\"t_max\":%.2f,"
+    "\"t_min\":%.2f,"
+    "\"t_avg\":%.2f,"
+    "\"current\":%.2f,"
+    "\"time\":%u,"
+    "\"undervoltage\":%d,"
+    "\"overvoltage\":%d,"
+    "\"pec\":%d,"
+    "\"overtemperature\":%d,",
+    avg.soc, avg.total_v,
+    avg.max_v, avg.min_v, avg.avg_v,
+    avg.max_temp, avg.min_temp, avg.avg_temp,
+    avg.current, avg.time_ms,
+    avg.undervoltage, avg.overvoltage,
+    avg.pec, avg.overtemperature);
+
+  int total = avg.num_cells > 0 ? avg.num_cells : BMS_NUM_CELLS;
+  for (int g = 0; g < total; g += 10) {
+    int end = g + 10;
+    if (end > total) end = total;
+    pos += snprintf(buf + pos, sizeof(buf) - pos,
+                    "\"cells_%d_%d\":[", g + 1, end);
+    for (int i = g; i < end && pos < (int)sizeof(buf) - 20; i++) {
+      if (i > g) buf[pos++] = ',';
+      pos += snprintf(buf + pos, sizeof(buf) - pos, "%.2f", avg.cell_v[i]);
+    }
+    pos += snprintf(buf + pos, sizeof(buf) - pos, "],");
+  }
+
+  if (pos > 0 && buf[pos - 1] == ',') pos--;
+  pos += snprintf(buf + pos, sizeof(buf) - pos, "}");
+
+  return String(buf);
 }

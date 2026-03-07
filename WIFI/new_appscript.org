@@ -1,0 +1,61 @@
+// When ESP32 sends a POST, Google runs doPost
+// Column order:
+// A: Timestamp | B: DeviceID | C: SOC | D: TotalV | E: VMax | F: VMin | G: VAvg
+// H: TMax | I: TMin | J: TAvg | K: Current | L: Time(ms)
+// M: Undervoltage | N: Overvoltage | O: PEC | P: Overtemperature
+// Q: Cells 1-10 | R: Cells 11-20 | ... | AD: Cells 131-140
+function doPost(e) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Sheet1");
+    if (!sheet) sheet = ss.getSheets()[0];
+
+    var data = {};
+    if (e && e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
+    }
+
+    var ts       = new Date();
+    var deviceId = data.device_id || "";
+
+    var soc      = (data.soc !== undefined)      ? data.soc      : "";
+    var totalV   = (data.total_v !== undefined)   ? data.total_v  : "";
+    var vMax     = (data.v_max !== undefined)     ? data.v_max    : "";
+    var vMin     = (data.v_min !== undefined)     ? data.v_min    : "";
+    var vAvg     = (data.v_avg !== undefined)     ? data.v_avg    : "";
+
+    var tMax     = (data.t_max !== undefined)     ? data.t_max    : "";
+    var tMin     = (data.t_min !== undefined)     ? data.t_min    : "";
+    var tAvg     = (data.t_avg !== undefined)     ? data.t_avg    : "";
+
+    var current  = (data.current !== undefined)   ? data.current  : "";
+    var timeMs   = (data.time !== undefined)      ? data.time     : "";
+
+    var uv       = (data.undervoltage !== undefined)    ? data.undervoltage    : "";
+    var ov       = (data.overvoltage !== undefined)     ? data.overvoltage     : "";
+    var pec      = (data.pec !== undefined)             ? data.pec             : "";
+    var ot       = (data.overtemperature !== undefined)  ? data.overtemperature : "";
+
+    var row = [ts, deviceId, soc, totalV, vMax, vMin, vAvg,
+               tMax, tMin, tAvg, current, timeMs,
+               uv, ov, pec, ot];
+
+    for (var g = 1; g <= 140; g += 10) {
+      var end = g + 9;
+      var key = "cells_" + g + "_" + end;
+      var arr = Array.isArray(data[key]) ? JSON.stringify(data[key]) : "";
+      row.push(arr);
+    }
+
+    sheet.appendRow(row);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: String(err) }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}

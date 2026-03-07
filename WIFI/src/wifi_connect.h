@@ -1,7 +1,3 @@
-#ifndef WIFI_CONNECT_H
-#define WIFI_CONNECT_H
+#pragma once
 
-// Connect to WiFi. Blocks up to ~15 s. Prints status to Serial.
 void connectWiFi();
-
-#endif

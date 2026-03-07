@@ -4,33 +4,34 @@
 #include "usb_host.h"
 #include "usb_acm.h"
 #include "usb/usb_helpers.h"
-#include "esp_log.h"
 #include "uart_serial.h"
+#include "bms_data.h"
 
 HardwareSerial Serial0(0);
 
+// --- Adjustable parameters ---
+unsigned long POST_INTERVAL_MS = 30000;
+
 USBhost host;
 USBacmDevice *device = nullptr;
-int counter = 0;
 
 static void cdc_callback(int event, void *data, size_t len)
 {
     switch (event) {
     case CDC_CTRL_SET_CONTROL_LINE_STATE:
-        Serial0.println("CDC: control line state set");
         if (device) device->setLineCoding(115200, 0, 0, 8);
         break;
     case CDC_DATA_IN:
         if (device) {
             device->INDATA();
-            if (data && len) Serial0.write((const uint8_t *)data, len);
+            if (data && len)
+                bms_feed((const uint8_t *)data, len);
         }
         break;
-    case CDC_DATA_OUT:
-        break;
     case CDC_CTRL_SET_LINE_CODING:
-        Serial0.println("CDC: line coding set — starting bulk reads");
         if (device) device->INDATA();
+        break;
+    default:
         break;
     }
 }
@@ -91,26 +92,29 @@ void setup()
 
 void loop()
 {
-    while (counter < 10) {
-        String payload = makePayload();
-        bool ok = postToGoogleSheets(payload);
-        Serial0.print("POST success? ");
-        Serial0.println(ok ? "YES" : "NO");
-        counter++;
-    }
+    static unsigned long lastPost = 0;
+    static unsigned long lastStatus = 0;
+    const unsigned long STATUS_INTERVAL_MS = 5000;
 
-    static unsigned long last = 0;
-    if (millis() - last >= 5000) {
-        last = millis();
+    if (millis() - lastStatus >= STATUS_INTERVAL_MS) {
+        lastStatus = millis();
         if (device && device->isConnected()) {
             const usb_device_desc_t *desc = host.getDeviceDescriptor();
             usb_device_info_t info = host.getDeviceInfo();
-            Serial0.printf("[idle] USB device: connected  VID=0x%04X PID=0x%04X  speed=%s addr=%d\n",
+            Serial0.printf("[status] USB: connected  VID=0x%04X PID=0x%04X  speed=%s addr=%d  BMS=%s\n",
                            desc ? desc->idVendor : 0, desc ? desc->idProduct : 0,
-                           info.speed ? "FULL" : "LOW", info.dev_addr);
+                           info.speed ? "FULL" : "LOW", info.dev_addr,
+                           bms.valid ? "valid" : "waiting");
         } else {
-            Serial0.println("[idle] USB device: waiting");
+            Serial0.println("[status] USB device: waiting");
         }
     }
 
+    if (bms.valid && millis() - lastPost >= POST_INTERVAL_MS) {
+        int samples = bms_accum_count();
+        lastPost = millis();
+        String payload = makePayload();
+        bool ok = postToGoogleSheets(payload);
+        Serial0.printf("[post] success=%s  samples_averaged=%d\n", ok ? "YES" : "NO", samples);
+    }
 }
