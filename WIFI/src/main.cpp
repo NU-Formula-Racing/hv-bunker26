@@ -6,11 +6,10 @@
 #include "usb/usb_helpers.h"
 #include "uart_serial.h"
 #include "bms_data.h"
+#include "driver/gpio.h"
 
 HardwareSerial Serial0(0);
 
-// --- Adjustable parameters ---
-unsigned long POST_INTERVAL_MS = 30000;
 
 USBhost host;
 USBacmDevice *device = nullptr;
@@ -88,14 +87,44 @@ void setup()
     Serial0.println("USB host initialized.");
 
     connectWiFi();
+    gpio_reset_pin(GPIO_NUM_1);
+    gpio_set_direction(GPIO_NUM_1, GPIO_MODE_OUTPUT);
+    gpio_reset_pin(GPIO_NUM_2);
+    gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
 }
 
+// --- Adjustable parameters ---
+unsigned long POST_INTERVAL_MS = 3000;
+static const unsigned long BOARD_OFF_INTERVAL_MS =  5000;
+static const unsigned long BOARD_SLEEP_TIME_MS =  20000;
+static const unsigned long STATUS_INTERVAL_MS = 5000;
+static unsigned long lastPost = 0;
+static unsigned long lastStatus = 0;
+static unsigned long lastBoardOff = 0;
+bool just_woke_up = true;
+//loop logic:
+// Go to sleep every BOARD_OFF_INTERVAL_MS milliseconds
+// Otherwise, if just woke up, wait 1 second to filter out the initial spike
+//            Collect data in 3 second interval and post to Google Sheets
 void loop()
 {
-    static unsigned long lastPost = 0;
-    static unsigned long lastStatus = 0;
-    const unsigned long STATUS_INTERVAL_MS = 5000;
 
+    if (millis() - lastBoardOff >= BOARD_OFF_INTERVAL_MS) {
+        just_woke_up = true;
+        gpio_set_level(GPIO_NUM_1, 0);
+        gpio_set_level(GPIO_NUM_2, 0);
+        delay(BOARD_SLEEP_TIME_MS);
+        lastBoardOff = millis();
+    }
+    else{
+        //Turn on the board
+        gpio_set_level(GPIO_NUM_1, 1);
+        gpio_set_level(GPIO_NUM_2, 1);
+        if (just_woke_up){
+            delay(1000);
+            just_woke_up = false;
+        }
+    
     if (millis() - lastStatus >= STATUS_INTERVAL_MS) {
         lastStatus = millis();
         if (device && device->isConnected()) {
@@ -117,4 +146,12 @@ void loop()
         bool ok = postToGoogleSheets(payload);
         Serial0.printf("[post] success=%s  samples_averaged=%d\n", ok ? "YES" : "NO", samples);
     }
+}
+
+        // gpio_set_level(GPIO_NUM_1, 1);
+        // gpio_set_level(GPIO_NUM_2, 1);
+        // delay(5000);
+        // gpio_set_level(GPIO_NUM_1, 0);
+        // gpio_set_level(GPIO_NUM_2, 0);
+        // delay(5000);
 }
