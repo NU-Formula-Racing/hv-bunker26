@@ -13,6 +13,9 @@ HardwareSerial Serial0(0);
 
 USBhost host;
 USBacmDevice *device = nullptr;
+static unsigned long lastStatus = 0;
+static unsigned long lastBoardOff = 0;
+static unsigned long realReadingBeginsAt = 0;
 
 static void cdc_callback(int event, void *data, size_t len)
 {
@@ -91,21 +94,23 @@ void setup()
     gpio_set_direction(GPIO_NUM_1, GPIO_MODE_OUTPUT);
     gpio_reset_pin(GPIO_NUM_2);
     gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
+    lastStatus = millis();
+    lastBoardOff = millis();
+    realReadingBeginsAt = millis();
 }
 
 // --- Adjustable parameters ---
 unsigned long POST_INTERVAL_MS = 3000;
 static const unsigned long BOARD_OFF_INTERVAL_MS =  5000;
-static const unsigned long BOARD_SLEEP_TIME_MS =  20000;
+static const unsigned long BOARD_SLEEP_TIME_S =  40;
 static const unsigned long STATUS_INTERVAL_MS = 5000;
-static unsigned long lastPost = 0;
-static unsigned long lastStatus = 0;
-static unsigned long lastBoardOff = 0;
 bool just_woke_up = true;
+bool dont_post = false;
 //loop logic:
 // Go to sleep every BOARD_OFF_INTERVAL_MS milliseconds
 // Otherwise, if just woke up, wait 1 second to filter out the initial spike
 //            Collect data in 3 second interval and post to Google Sheets
+//            Go to sleep again
 void loop()
 {
 
@@ -113,7 +118,7 @@ void loop()
         just_woke_up = true;
         gpio_set_level(GPIO_NUM_1, 0);
         gpio_set_level(GPIO_NUM_2, 0);
-        delay(BOARD_SLEEP_TIME_MS);
+        sleep(BOARD_SLEEP_TIME_S);
         lastBoardOff = millis();
     }
     else{
@@ -123,29 +128,34 @@ void loop()
         if (just_woke_up){
             delay(1000);
             just_woke_up = false;
+            bms_data_t discard;
+            bms_accum_snapshot(&discard);  // clears the accumulator, throws away the data
+            realReadingBeginsAt = millis();
+            dont_post = false;
+            Serial0.println("Waking up and clearing accumulator");
         }
-    
-    if (millis() - lastStatus >= STATUS_INTERVAL_MS) {
-        lastStatus = millis();
-        if (device && device->isConnected()) {
-            const usb_device_desc_t *desc = host.getDeviceDescriptor();
-            usb_device_info_t info = host.getDeviceInfo();
-            Serial0.printf("[status] USB: connected  VID=0x%04X PID=0x%04X  speed=%s addr=%d  BMS=%s\n",
-                           desc ? desc->idVendor : 0, desc ? desc->idProduct : 0,
-                           info.speed ? "FULL" : "LOW", info.dev_addr,
-                           bms.valid ? "valid" : "waiting");
-        } else {
-            Serial0.println("[status] USB device: waiting");
-        }
-    }
 
-    if (bms.valid && millis() - lastPost >= POST_INTERVAL_MS) {
+    if (!dont_post && bms.valid && millis() - realReadingBeginsAt >= POST_INTERVAL_MS) {
         int samples = bms_accum_count();
-        lastPost = millis();
         String payload = makePayload();
         bool ok = postToGoogleSheets(payload);
         Serial0.printf("[post] success=%s  samples_averaged=%d\n", ok ? "YES" : "NO", samples);
+        dont_post = true;
     }
+
+        // if (millis() - lastStatus >= STATUS_INTERVAL_MS) {
+    //     lastStatus = millis();
+    //     if (device && device->isConnected()) {
+    //         const usb_device_desc_t *desc = host.getDeviceDescriptor();
+    //         usb_device_info_t info = host.getDeviceInfo();
+    //         Serial0.printf("[status] USB: connected  VID=0x%04X PID=0x%04X  speed=%s addr=%d  BMS=%s\n",
+    //                        desc ? desc->idVendor : 0, desc ? desc->idProduct : 0,
+    //                        info.speed ? "FULL" : "LOW", info.dev_addr,
+    //                        bms.valid ? "valid" : "waiting");
+    //     } else {
+    //         Serial0.println("[status] USB device: waiting");
+    //     }
+    // }
 }
 
         // gpio_set_level(GPIO_NUM_1, 1);
