@@ -37,3 +37,6 @@ pio device monitor
 
 ### Serial Monitor
 The serial monitor is configured at 115200 baud. You can view printf/Serial output from the ESP32 through the USB port.
+
+### Acknowledgement
+##Sponsored by Kate Huang and Formula Racing Club

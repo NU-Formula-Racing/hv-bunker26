@@ -41,8 +41,20 @@ void USBhostDevice::onEvent(usb_host_event_cb_t _cb)
 
 bool USBhostDevice::deinit()
 {
+    if (!config_desc || !_host)
+        return true;
+
+    usb_host_client_handle_t client = _host->clientHandle();
+    usb_device_handle_t dev = _host->deviceHandle();
+    // Must release claimed interfaces before the host closes the device (after this callback).
+    // Skipping release when dev was non-null caused the next attach to fail ("device won't turn on").
+    if (!client || !dev)
+        return true;
+
     for (size_t n = 0; n < config_desc->bNumInterfaces; n++) {
-        usb_host_interface_release(_host->clientHandle(), _host->deviceHandle(), n);
+        esp_err_t err = usb_host_interface_release(client, dev, (uint8_t)n);
+        if (err != ESP_OK && err != ESP_ERR_NOT_FOUND)
+            ESP_LOGW("USBhostDevice", "interface_release %u: %s", (unsigned)n, esp_err_to_name(err));
     }
     return true;
 }

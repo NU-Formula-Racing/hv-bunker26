@@ -31,6 +31,7 @@ void IRAM_ATTR usb_write_cb(usb_transfer_t *transfer)
 
 USBacmDevice::USBacmDevice(const usb_config_desc_t *config_desc, USBhost *host)
 {
+    this->config_desc = config_desc;
     _host = host;
     ep_int = nullptr;
     ep_in = nullptr;
