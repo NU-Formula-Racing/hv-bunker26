@@ -6,6 +6,8 @@ const char* SSID = "Device-Northwestern";   // <- set this
 const char* PASS = "";                      // <- set if required; otherwise ""
 
 void connectWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return;
+
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   WiFi.persistent(true);

@@ -118,35 +118,35 @@ bool dont_post = false;
 //            Go to sleep again
 void loop()
 {
-    connectWiFi();
-//     if (millis() - lastBoardOff >= BOARD_OFF_INTERVAL_MS) {
-//         just_woke_up = true;
-//         gpio_set_level(GPIO_NUM_1, 0);
-//         gpio_set_level(GPIO_NUM_2, 0);
-//         sleep(BOARD_SLEEP_TIME_S);
-//         lastBoardOff = millis();
-//     }
-//     else{
-//         //Turn on the board
-//         gpio_set_level(GPIO_NUM_1, 1);
-//         gpio_set_level(GPIO_NUM_2, 1);
-//         if (just_woke_up){
-//             delay(1000);
-//             just_woke_up = false;
-//             bms_data_t discard;
-//             bms_accum_snapshot(&discard);  // clears the accumulator, throws away the data
-//             realReadingBeginsAt = millis();
-//             dont_post = false;
-//             Serial0.println("Waking up and clearing accumulator");
-//         }
+    if (millis() - lastBoardOff >= BOARD_OFF_INTERVAL_MS) {
+        just_woke_up = true;
+        gpio_set_level(GPIO_NUM_1, 0);
+        gpio_set_level(GPIO_NUM_2, 0);
+        sleep(BOARD_SLEEP_TIME_S);
+        lastBoardOff = millis();
+    }
+    else{
+        //Turn on the board
+        gpio_set_level(GPIO_NUM_1, 1);
+        gpio_set_level(GPIO_NUM_2, 1);
+        if (just_woke_up){
+            connectWiFi();
+            delay(1000);
+            just_woke_up = false;
+            bms_data_t discard;
+            bms_accum_snapshot(&discard);  // clears the accumulator, throws away the data
+            realReadingBeginsAt = millis();
+            dont_post = false;
+            Serial0.println("Waking up and clearing accumulator");
+        }
 
-//     if (!dont_post && bms.valid && millis() - realReadingBeginsAt >= POST_INTERVAL_MS) {
-//         int samples = bms_accum_count();
-//         String payload = makePayload();
-//         bool ok = postToGoogleSheets(payload);
-//         Serial0.printf("[post] success=%s  samples_averaged=%d\n", ok ? "YES" : "NO", samples);
-//         dont_post = true;
-//     }
+    if (!dont_post && bms.valid && millis() - realReadingBeginsAt >= POST_INTERVAL_MS) {
+        int samples = bms_accum_count();
+        String payload = makePayload();
+        bool ok = postToGoogleSheets(payload);
+        Serial0.printf("[post] success=%s  samples_averaged=%d\n", ok ? "YES" : "NO", samples);
+        dont_post = true;
+    }
 
 //         // if (millis() - lastStatus >= STATUS_INTERVAL_MS) {
 //     //     lastStatus = millis();
@@ -161,7 +161,7 @@ void loop()
 //     //         Serial0.println("[status] USB device: waiting");
 //     //     }
 //     // }
-// }
+}
 
         // gpio_set_level(GPIO_NUM_1, 1);
         // gpio_set_level(GPIO_NUM_2, 1);
